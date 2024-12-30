@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Zombie Bomb Game</title>
+  <style>
+    body {
+      margin: 0;
+      overflow: hidden;
+    }
+    canvas {
+      display: block;
+      background: #333;
+    }
+  </style>
+</head>
+<body>
+<canvas id="gameCanvas"></canvas>
+<script>
+  const canvas = document.getElementById('gameCanvas');
+  const ctx = canvas.getContext('2d');
+
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+
+  let zombies = [];
+  let bombs = [];
+  let player = { x: canvas.width / 2, y: canvas.height - 50, size: 20 };
+  let gameOver = false;
+  let gameWin = false;
+  let zombiesKilled = 0;
+
+  function spawnZombies(count) {
+    for (let i = 0; i < count; i++) {
+      zombies.push({
+        x: Math.random() * canvas.width,
+        y: Math.random() * canvas.height / 2,
+        size: 30,
+        speed: Math.random() * 1 + 0.5,
+      });
+    }
+  }
+
+  function drawPlayer() {
+    ctx.fillStyle = 'blue';
+    ctx.beginPath();
+    ctx.arc(player.x, player.y - 10, 10, 0, Math.PI * 2); // Head
+    ctx.fill();
+
+    ctx.fillRect(player.x - 5, player.y - 10, 10, 20); // Body
+    ctx.fillRect(player.x - 10, player.y + 10, 5, 15); // Left leg
+    ctx.fillRect(player.x + 5, player.y + 10, 5, 15); // Right leg
+    ctx.fillRect(player.x - 15, player.y - 5, 5, 10); // Left arm
+    ctx.fillRect(player.x + 10, player.y - 5, 5, 10); // Right arm
+  }
+
+  function drawZombies() {
+    ctx.fillStyle = 'green';
+    zombies.forEach(zombie => {
+      ctx.beginPath();
+      ctx.arc(zombie.x, zombie.y - 10, 10, 0, Math.PI * 2); // Head
+      ctx.fill();
+
+      ctx.fillRect(zombie.x - 5, zombie.y - 10, 10, 20); // Body
+      ctx.fillRect(zombie.x - 10, zombie.y + 10, 5, 15); // Left leg
+      ctx.fillRect(zombie.x + 5, zombie.y + 10, 5, 15); // Right leg
+      ctx.fillRect(zombie.x - 15, zombie.y - 5, 5, 10); // Left arm
+      ctx.fillRect(zombie.x + 10, zombie.y - 5, 5, 10); // Right arm
+    });
+  }
+
+  function drawBombs() {
+    ctx.fillStyle = 'red';
+    bombs.forEach(bomb => {
+      ctx.beginPath();
+      ctx.arc(bomb.x, bomb.y, 10, 0, Math.PI * 2); // Bomb body
+      ctx.fill();
+
+      ctx.beginPath();
+      ctx.moveTo(bomb.x - 5, bomb.y - 10);
+      ctx.lineTo(bomb.x, bomb.y - 15);
+      ctx.lineTo(bomb.x + 5, bomb.y - 10);
+      ctx.strokeStyle = 'yellow';
+      ctx.stroke(); // Wiggly line
+    });
+  }
+
+  function moveZombies() {
+    zombies.forEach(zombie => {
+      zombie.y += zombie.speed;
+      if (zombie.y > canvas.height) zombie.y = 0;
+
+      const dx = zombie.x - player.x;
+      const dy = zombie.y - player.y;
+      const distance = Math.sqrt(dx * dx + dy * dy);
+
+      if (distance < zombie.size + player.size) {
+        gameOver = true;
+      }
+    });
+  }
+
+  function moveBombs() {
+    bombs.forEach((bomb, index) => {
+      bomb.y -= 5;
+
+      zombies.forEach((zombie, zIndex) => {
+        const dx = bomb.x - zombie.x;
+        const dy = bomb.y - zombie.y;
+        const distance = Math.sqrt(dx * dx + dy * dy);
+
+        if (distance < 20 + zombie.size) {
+          zombies.splice(zIndex, 1);
+          bombs.splice(index, 1);
+          zombiesKilled++;
+        }
+      });
+    });
+  }
+
+  function updateGame() {
+    if (zombies.length === 0) {
+      gameWin = true;
+    }
+
+    if (!gameOver && !gameWin) {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      drawPlayer();
+      drawZombies();
+      drawBombs();
+      moveZombies();
+      moveBombs();
+      requestAnimationFrame(updateGame);
+    } else {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.fillStyle = 'white';
+      ctx.font = '48px Arial';
+      ctx.textAlign = 'center';
+
+      if (gameWin) {
+        ctx.fillText(`You Win! Zombies Killed: ${zombiesKilled}`, canvas.width / 2, canvas.height / 2);
+      } else {
+        ctx.fillText(`Game Over! Zombies Killed: ${zombiesKilled}`, canvas.width / 2, canvas.height / 2);
+      }
+
+      setTimeout(() => {
+        resetGame();
+      }, 5000);
+    }
+  }
+
+  function resetGame() {
+    zombies = [];
+    bombs = [];
+    zombiesKilled = 0;
+    gameOver = false;
+    gameWin = false;
+    spawnZombies(10);
+    updateGame();
+  }
+
+  function throwBomb(x, y) {
+    bombs.push({ x, y });
+  }
+
+  window.addEventListener('mousemove', (e) => {
+    player.x = e.clientX;
+    player.y = e.clientY;
+  });
+
+  window.addEventListener('click', () => {
+    throwBomb(player.x, player.y);
+  });
+
+  spawnZombies(10);
+  updateGame();
+</script>
+</body>
+</html>
