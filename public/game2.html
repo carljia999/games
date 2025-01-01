@@ -21,18 +21,25 @@
   const canvas = document.getElementById('gameCanvas');
   const ctx = canvas.getContext('2d');
 
-  canvas.width = window.innerWidth;
-  canvas.height = window.innerHeight;
-
   let zombies = [];
   let bombs = [];
   let stones = [];
   let bossZombie = null;
   let bossHealth = 10;
-  let player = { x: canvas.width / 2, y: canvas.height - 50, size: 20, hitsTaken: 0 };
+  let player = { x: canvas.width / 2, y: canvas.height - 50, size: 20, hitsTaken: 0, speed: 5 };
+  let keysPressed = {};
   let gameOver = false;
   let gameWin = false;
   let zombiesKilled = 0;
+
+  function resizeCanvas() {
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+    resetGame();
+  }
+
+  window.addEventListener('resize', resizeCanvas);
+  resizeCanvas();
 
   function spawnZombies(count) {
     for (let i = 0; i < count; i++) {
@@ -204,9 +211,25 @@
     });
   }
 
+  function movePlayer() {
+    if (keysPressed['ArrowUp'] && player.y - player.size > 0) {
+      player.y -= player.speed;
+    }
+    if (keysPressed['ArrowDown'] && player.y + player.size < canvas.height) {
+      player.y += player.speed;
+    }
+    if (keysPressed['ArrowLeft'] && player.x - player.size > 0) {
+      player.x -= player.speed;
+    }
+    if (keysPressed['ArrowRight'] && player.x + player.size < canvas.width) {
+      player.x += player.speed;
+    }
+  }
+
   function updateGame() {
     if (!gameOver && !gameWin) {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
+      movePlayer();
       drawPlayer();
       drawZombies();
       drawBombs();
@@ -258,8 +281,30 @@
     player.y = e.clientY;
   });
 
+  window.addEventListener('touchmove', (e) => {
+    if (e.touches && e.touches.length > 0) {
+      player.x = e.touches[0].clientX;
+      player.y = e.touches[0].clientY;
+    }
+  });
+
   window.addEventListener('click', () => {
     throwBomb(player.x, player.y);
+  });
+
+  window.addEventListener('touchstart', () => {
+    throwBomb(player.x, player.y);
+  });
+
+  window.addEventListener('keydown', (e) => {
+    keysPressed[e.key] = true;
+    if (e.key === ' ') {
+      throwBomb(player.x, player.y);
+    }
+  });
+
+  window.addEventListener('keyup', (e) => {
+    keysPressed[e.key] = false;
   });
 
   spawnZombies(10);
