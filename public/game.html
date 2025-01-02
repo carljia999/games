@@ -199,6 +199,10 @@
     }
   });
 
+  window.addEventListener('touchstart', () => {
+    throwBomb(player.x, player.y);
+  });
+
   window.addEventListener('click', () => {
     throwBomb(player.x, player.y);
   });
